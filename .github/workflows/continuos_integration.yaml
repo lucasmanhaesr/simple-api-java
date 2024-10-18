@@ -1,0 +1,25 @@
+#Nome do workflow
+name: Continuous Integration
+#Será executado em pull request, na branch develop
+on:
+  pull_request:
+    types: [opened, reopened]
+    branches: "feature/**"
+jobs:
+#Nome do trabalho
+  tests:
+#Será executado em um servidor ubuntu
+    runs-on: ubuntu-latest
+#Consiste em 3 etapas: checar o código, instalação da JDK 21, e por fim executar o teste unitário
+    steps:
+      -
+        name: Git Checkout
+        uses: actions/checkout@v4
+
+      -   name: Setup Java SDK
+          uses: actions/setup-java@v4
+          with:
+            distribution: 'temurin'
+            java-version: '21'
+      -   name: Unit tests
+          run: mvn test
