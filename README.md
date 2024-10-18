@@ -16,8 +16,9 @@ docker compose up --build
 
 ## Testes unitários (validação)
 
-./mvnw test
+=======
 
+./mvnw test
 
 ## Documentação online (OpenAPI)
 
