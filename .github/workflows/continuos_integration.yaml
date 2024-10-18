@@ -1,8 +1,8 @@
 name: Continuous Integration
 on:
   pull_request:
-    types: [opened, reopened]
-    branches: "feature/**"
+    branches:
+      - develop
 jobs:
   tests:
     runs-on: ubuntu-latest
