@@ -1,0 +1,55 @@
+#Nome do workflow
+name: Continuos Delivery
+#Será executado em um push na branch develop
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+# Trabalho para enviar o projeto para o DockerHub
+  build:
+    runs-on: 'ubuntu-latest'
+
+    steps:
+      - uses: actions/checkout@v2
+#Instalção do docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+#Login no docker utlizando as variáveis de ambiente que utilizamos no Github
+      - name: Log in to registry
+        uses: docker/login-action@v2
+        with:
+          registry: https://index.docker.io/v1/
+          username: ${{ secrets.DOCKERHUB_USERNAME  }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+#Fazendo o push para o DockerHub através do dockerfile do projeto utilizando a URL do repositorio e
+      - name: Build and push container image to registry
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: index.docker.io/${{ secrets.DOCKERHUB_USERNAME }}/simple-api-java:${{ github.sha }}
+          file: ./Dockerfile
+#Trabalho para fazer o deploy do conteiner no Azure que depende da execução correta do trabalho build
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    #Configurando duas variáveis
+    environment:
+      #Uma variavel com o nome production
+      name: 'production'
+      #Outra variavel com uma URL virá da configuracao e execucao de um step logo abaixo e a saida desse step é a URL do WebApp
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+#Step de uma action pré configurada para deploy de um webapp no Azure
+    steps:
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          #Nome correspondente ao WebApp no Servicos de aplicativos do Azure
+          app-name: 'simple-java-api-dev'
+          slot-name: 'production'
+          #O deploy será feito na conta salva na secret do Github
+          publish-profile: ${{ secrets.AZURE_PROFILE }}
+          #E também o deploy será feito usando a imagem do DockerHub e tag da imagem será o ID do commit
+          images: 'index.docker.io/${{ secrets.DOCKERHUB_USERNAME }}/simple-api-java:${{ github.sha }}'
